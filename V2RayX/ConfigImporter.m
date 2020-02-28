@@ -174,8 +174,8 @@
         [set[@"rules"] addObject:lastRule];
     }
     NSMutableArray* ruleToRemove = [[NSMutableArray alloc] init];
-    NSArray* notSupported = @[@"source", @"user", @"inboundTag", @"protocol"];
-    NSArray* supported = @[@"domain", @"ip", @"network", @"port"];
+    NSArray* notSupported = NOT_SUPPORTED_ROUTING;
+    NSArray* supported = SUPPORTED_ROUTING;
     // currently, source/user/inboundTag/protocol are not supported
     for (NSMutableDictionary* aRule in set[@"rules"]) {
         [aRule removeObjectsForKeys:notSupported];
@@ -285,6 +285,9 @@
 + (NSMutableDictionary*)importFromHTTPSubscription: (NSString*)httpLink {
     // https://blog.csdn.net/yi_zz32/article/details/48769487
     NSMutableDictionary* result = [@{@"vmess": @[], @"other": @[]} mutableDeepCopy];
+    if ([httpLink length] < 4) {
+        return nil;
+    }
     if (![@"http" isEqualToString:[httpLink substringToIndex:4]]) {
         return nil;
     }

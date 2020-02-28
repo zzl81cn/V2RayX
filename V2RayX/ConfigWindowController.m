@@ -90,6 +90,8 @@
     self.shareOverLan = _appDelegate.shareOverLan;
     self.dnsString = _appDelegate.dnsString;
     self.enableRestore = _appDelegate.enableRestore;
+    self.enableEncryption = _appDelegate.enableEncryption;
+    self.encryptionKey = [NSString stringWithString:_appDelegate.encryptionKey];
     NSDictionary *logLevelDic = @{
                                @"debug": @4,
                                @"info": @3,
@@ -264,6 +266,8 @@
     if (_appDelegate.routingRuleSets.count == 0) {
         [_appDelegate.routingRuleSets addObject:[ROUTING_DIRECT mutableDeepCopy]];
     }
+    _appDelegate.enableEncryption = self.enableEncryption;
+    _appDelegate.encryptionKey = self.encryptionKey;
     [_appDelegate saveConfigInfo];
     [_appDelegate updateSubscriptions:self];
     [[self window] close];
@@ -278,6 +282,8 @@
             self.routingRuleSets = self.advancedWindowController.routingRuleSets;
             self.subscriptions = self.advancedWindowController.subscriptions;
             self.enableRestore = self.advancedWindowController.enableRestore;
+            self.enableEncryption = self.advancedWindowController.enableEncryption;
+            self.encryptionKey = self.advancedWindowController.encryptionKey;
         }
         self.advancedWindowController = nil;
     }];
@@ -301,17 +307,17 @@
 
 // https://stackoverflow.com/questions/7387341/how-to-create-and-get-return-value-from-cocoa-dialog/7387395#7387395
 - (void)askInputWithPrompt: (NSString*)prompt handler:(void (^ __nullable)(NSString* inputStr))handler {
-    NSAlert *alert = [NSAlert alertWithMessageText: prompt
-                                     defaultButton:@"OK"
-                                   alternateButton:@"Cancel"
-                                       otherButton:nil
-                         informativeTextWithFormat:@""];
+    
+    NSAlert *alert = [[NSAlert alloc] init];
+    alert.messageText = prompt;
+    [alert addButtonWithTitle:@"OK"];
+    [alert addButtonWithTitle:@"Cancel"];
     NSTextField *inputField = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 400, 24)];
     inputField.usesSingleLineMode = true;
     inputField.lineBreakMode = NSLineBreakByTruncatingHead;
     [alert setAccessoryView:inputField];
     [alert beginSheetModalForWindow:self.window completionHandler:^(NSModalResponse returnCode) {
-        if (returnCode == NSModalResponseOK) {
+        if (returnCode == NSAlertFirstButtonReturn) {
             handler([inputField stringValue]);
         }
     }];
@@ -392,7 +398,7 @@
     [openPanel setDirectoryURL:[[NSFileManager defaultManager] homeDirectoryForCurrentUser]];
 
     [openPanel beginSheetModalForWindow:[self window]  completionHandler:^(NSModalResponse result) {
-        if (result == NSOKButton) {
+        if (result == NSModalResponseOK) {
             dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
                 NSArray* files = [openPanel URLs];
                 NSMutableDictionary* result = [ConfigImporter importFromStandardConfigFiles:files];
